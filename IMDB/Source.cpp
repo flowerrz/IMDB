@@ -472,7 +472,7 @@ void displayChoiceMenu()
 
 			break;
 		case '9':
-			std::cout << "You exited" << std::endl;
+			std::cout << "You exited";
 			return;
 		default:
 			std::cout << "Invalid choice" << std::endl;
@@ -667,7 +667,19 @@ void findFilmByGenre()
 
 void showAllFilms()
 {
+	std::cout << "------------------------" << std::endl;
 
+	std::ifstream FilmFile("filmsFile.txt", std::ios::app);
+
+	char buffer[bufferSize];
+	while (FilmFile.getline(buffer, bufferSize))
+	{
+		std::cout << buffer << std::endl;
+	}
+
+	FilmFile.close();
+
+	std::cout << "------------------------" << std::endl;
 }
 
 #pragma endregion
