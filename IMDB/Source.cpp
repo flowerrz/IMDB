@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
 
+const int bufferSize = 256;
+
 //Functions for strings
 int strCompare(const char* str1, const char* str2);
 void strCopy(const char* source, char* destination);
@@ -78,6 +80,9 @@ void getUserInput(char*& username, char*& password);
 //Functions for the user's choices
 void displayChoiceMenu();
 void addFilm();
+void findFilmByTitle();
+void findFilmByGenre();
+void showAllFilms();
 
 User currentUser;
 
@@ -179,7 +184,7 @@ void getUserInput(char*& username, char*& password)
 
 	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 	while (std::cin.get(ch) && i < MAX_USERNAME_SIZE - 1) {
-		if (ch == ' ' || ch == '\n' || ch == '\0') {
+		if (ch == '\n' || ch == '\0') {
 			break;
 		}
 		username[i++] = ch;
@@ -208,7 +213,6 @@ bool logInUser()
 		return false;
 	}
 
-	const int bufferSize = 256;
 	char buffer[bufferSize];
 
 	char* username = nullptr;
@@ -336,7 +340,7 @@ bool promptUser()
 
 #pragma region UserChoice
 
-const int MAX_STRING_LENGTH = 25;
+const int MAX_STRING_LENGTH = 50;
 
 void getFilmInput(char*& title, int& year, char*& ganre, char*& director, char**& actors, int& actorsCount)
 {
@@ -356,7 +360,7 @@ void getFilmInput(char*& title, int& year, char*& ganre, char*& director, char**
 
 	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 	while (std::cin.get(ch) && i < MAX_STRING_LENGTH - 1) {
-		if (ch == ' ' || ch == '\n' || ch == '\0') {
+		if (ch == '\n' || ch == '\0') {
 			break;
 		}
 		title[i++] = ch;
@@ -371,7 +375,7 @@ void getFilmInput(char*& title, int& year, char*& ganre, char*& director, char**
 	i = 0;
 	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 	while (std::cin.get(ch) && i < MAX_STRING_LENGTH - 1) {
-		if (ch == ' ' || ch == '\n' || ch == '\0') {
+		if (ch == '\n' || ch == '\0') {
 			break;
 		}
 		ganre[i++] = ch;
@@ -447,13 +451,13 @@ void displayChoiceMenu()
 			addFilm();
 			break;
 		case '2':
-
+			findFilmByTitle();
 			break;
 		case '3':
-
+			findFilmByGenre();
 			break;
 		case '4':
-
+			showAllFilms();
 			break;
 		case '5':
 
@@ -478,9 +482,9 @@ void displayChoiceMenu()
 
 void addFilm()
 {
-	std::ofstream UsersFile("filmsFile.txt", std::ios::app);
+	std::ofstream FilmFile("filmsFile.txt", std::ios::app);
 
-	if (!UsersFile.is_open())
+	if (!FilmFile.is_open())
 	{
 		std::cout << "An error occurred while opening the file" << std::endl;
 		return;
@@ -497,17 +501,17 @@ void addFilm()
 
 	Film film(title, year, ganre, director, actors, actorsCount);
 
-	UsersFile << film.title << " "
-		<< film.year << " "
-		<< film.ganre << " "
+	FilmFile << film.title << "\n"
+		<< film.year << "\n"
+		<< film.ganre << "\n"
 		<< film.director << std::endl;
 
 	for (int i = 0; i < actorsCount; i++)
 	{
-		UsersFile << film.actors[i] << " ";
+		FilmFile << film.actors[i] << " ";
 	}
 
-	std::cout << "\n";
+	FilmFile << "\n-\n";
 
 	delete[] title;
 	delete[] ganre;
@@ -517,7 +521,153 @@ void addFilm()
 	ganre = nullptr;
 	director = nullptr;
 
-	UsersFile.close();
+	FilmFile.close();
+}
+
+void findFilmByTitle()
+{
+	std::cout << "------------------------" << std::endl;
+
+	std::cout << "Title: " << std::endl;
+
+	char title[MAX_STRING_LENGTH];
+	int i = 0;
+	char ch;
+	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+	while (std::cin.get(ch) && i < MAX_STRING_LENGTH - 1) {
+		if (ch == '\n' || ch == '\0') {
+			break;
+		}
+		title[i++] = ch;
+	}
+	title[i] = '\0';
+
+	std::ifstream FilmFile("filmsFile.txt", std::ios::app);
+
+	char buffer[bufferSize];
+
+	if (!FilmFile.is_open()) {
+		return;
+	}
+
+	int idx = 0;
+	while (FilmFile.getline(buffer, bufferSize))
+	{
+		if (idx > 0)
+		{
+			switch (idx)
+			{
+			case 1:
+				std::cout << "Year: " << buffer << "\n";
+				break;
+			case 2:
+				std::cout << "Ganre: " << buffer << "\n";
+				break;
+			case 3:
+				std::cout << "Director: " << buffer << "\n";
+				break;
+			case 4:
+				std::cout << "Actors: " << buffer << "\n";
+				break;
+			}
+			idx++;
+		}
+
+		if (buffer[0] == '-')
+		{
+			idx = 0;
+		}
+
+		if (strCompare(buffer, title) == 0)
+		{
+			idx++;
+		}
+	}
+
+	FilmFile.close();
+
+	std::cout << "------------------------" << std::endl;
+}
+
+void findFilmByGenre()
+{
+	std::cout << "------------------------" << std::endl;
+
+	std::cout << "Genre: " << std::endl;
+
+	char genre[MAX_STRING_LENGTH];
+	int i = 0;
+	char ch;
+	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+	while (std::cin.get(ch) && i < MAX_STRING_LENGTH - 1) {
+		if (ch == '\n' || ch == '\0') {
+			break;
+		}
+		genre[i++] = ch;
+	}
+	genre[i] = '\0';
+
+	std::ifstream FilmFile("filmsFile.txt", std::ios::app);
+
+	char buffer[bufferSize];
+	char title[MAX_STRING_LENGTH];
+	char year[MAX_STRING_LENGTH];
+
+	if (!FilmFile.is_open()) {
+		return;
+	}
+
+	int idx = 0;
+	bool isMatch = false;
+	while (FilmFile.getline(buffer, bufferSize))
+	{
+		if (idx == 0)
+		{
+			strCopy(buffer, title);
+		}
+		else if (idx == 1)
+		{
+			strCopy(buffer, year);
+		}
+
+		if (isMatch)
+		{
+			switch (idx)
+			{
+			case 3:
+				std::cout << "Director: " << buffer << "\n";
+				break;
+			case 4:
+				std::cout << "Actors: " << buffer << "\n";
+				isMatch = false;
+				idx = -1;
+				break;
+			}
+		}
+
+		if (buffer[0] == '-')
+		{
+			idx = -1;
+		}
+
+		if (strCompare(buffer, genre) == 0)
+		{
+			std::cout << "Title: " << title << "\n";
+			std::cout << "Year: " << year << "\n";
+			isMatch = true;
+		}
+
+		idx++;
+	}
+
+	FilmFile.close();
+
+	std::cout << "------------------------" << std::endl;
+}
+
+void showAllFilms()
+{
+
 }
 
 #pragma endregion
