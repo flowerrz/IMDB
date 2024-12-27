@@ -723,7 +723,14 @@ void updateInput()
 	char choice;
 	std::cin >> choice;
 
-	std::cout << "Enter new value" << std::endl;
+	if (choice == '5')
+	{
+		std::cout << "Input all actors, split by an interval." << std::endl;
+	}
+	else 
+	{
+		std::cout << "Enter new value" << std::endl;
+	}
 
 	char updateString[MAX_STRING_LENGTH];
 	i = 0;
@@ -739,6 +746,11 @@ void updateInput()
 	switch (choice)
 	{
 	case '1':
+		if (updateString[0] < '1' || updateString[0] > 10)
+		{
+			std::cout << "Invalid score! Please enter numbers 1 to 10." << std::endl;
+			return;
+		}
 		updateFilm(title, updateString, 7);
 		break;
 	case '2':
@@ -808,7 +820,7 @@ void updateFilm(char* title, char* newValue, int lineIndex)
 	if (std::remove("filmsFile.txt") != 0 || std::rename("tempFile.txt", "filmsFile.txt") != 0) {
 		std::cout << "Error: Unable to update filmsFile.txt." << std::endl;
 	}
-	else 
+	else
 	{
 		std::cout << "Film successfully updated." << std::endl;
 	}
