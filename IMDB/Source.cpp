@@ -83,6 +83,7 @@ void addFilm();
 void findFilmByTitle();
 void findFilmByGenre();
 void showAllFilms();
+void deleteFilm();
 
 User currentUser;
 
@@ -463,7 +464,11 @@ void displayChoiceMenu()
 
 			break;
 		case '6':
-
+			if (currentUser.role == RegularUser)
+			{
+				std::cout << "Only admins can delete films" << std::endl;
+			}
+			deleteFilm();
 			break;
 		case '7':
 
@@ -678,6 +683,70 @@ void showAllFilms()
 	}
 
 	FilmFile.close();
+
+	std::cout << "------------------------" << std::endl;
+}
+
+void deleteFilm()
+{
+	std::cout << "------------------------" << std::endl;
+
+	std::cout << "Title: " << std::endl;
+
+	char title[MAX_STRING_LENGTH];
+	int i = 0;
+	char ch;
+	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+	while (std::cin.get(ch) && i < MAX_STRING_LENGTH - 1) {
+		if (ch == '\n' || ch == '\0') {
+			break;
+		}
+		title[i++] = ch;
+	}
+	title[i] = '\0';
+
+	std::ifstream FilmFile("filmsFile.txt", std::ios::app);
+	std::ofstream TempFile("tempFile.txt");
+
+	if (!FilmFile.is_open()) {
+		std::cout << "Error: Unable to open filmsFile.txt for reading." << std::endl;
+		return;
+	}
+
+	if (!TempFile.is_open()) {
+		std::cout << "Error: Unable to open tempFile.txt for writing." << std::endl;
+		return;
+	}
+
+	char buffer[bufferSize];
+	bool inDeleteFilm = false;
+	while (FilmFile.getline(buffer, bufferSize))
+	{
+		if (strCompare(title, buffer) == 0)
+		{
+			inDeleteFilm = true;
+		}
+
+		if (!inDeleteFilm)
+		{
+			TempFile << buffer << "\n";
+		}
+
+		if (buffer[0] == '-')
+		{
+			inDeleteFilm = false;
+		}
+	}
+
+	FilmFile.close();
+	TempFile.close();
+
+	if (std::remove("filmsFile.txt") != 0 || std::rename("tempFile.txt", "filmsFile.txt") != 0) {
+		std::cout << "Error: Unable to update filmsFile.txt." << std::endl;
+	}
+	else {
+		std::cout << "Film" << title << "successfully deleted." << std::endl;
+	}
 
 	std::cout << "------------------------" << std::endl;
 }
