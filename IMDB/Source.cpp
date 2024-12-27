@@ -43,13 +43,14 @@ struct Film
 	char* ganre;
 	char* director;
 	char** actors;
+	int rating;
 
 	Film()
 	{
 
 	}
 
-	Film(char* inputTitle, int inputYear, char* inputGanre, char* inputDirector, char** inputActors, int actorCount)
+	Film(char* inputTitle, int inputYear, char* inputGanre, char* inputDirector, char** inputActors, int actorCount, int inputRating)
 	{
 		title = new char[strLength(inputTitle) + 1];
 		ganre = new char[strLength(inputGanre) + 1];
@@ -66,6 +67,8 @@ struct Film
 			actors[i] = new char[strLength(inputActors[i]) + 1];
 			strCopy(inputActors[i], actors[i]);
 		}
+
+		rating = inputRating;
 	}
 };
 
@@ -83,6 +86,8 @@ void addFilm();
 void findFilmByTitle();
 void findFilmByGenre();
 void showAllFilms();
+void updateInput();
+void updateFilm(char* title, char* newValue, int lineIndex);
 void deleteFilm();
 
 User currentUser;
@@ -461,7 +466,11 @@ void displayChoiceMenu()
 			showAllFilms();
 			break;
 		case '5':
-
+			if (currentUser.role == RegularUser)
+			{
+				std::cout << "Only admins can delete films" << std::endl;
+			}
+			updateInput();
 			break;
 		case '6':
 			if (currentUser.role == RegularUser)
@@ -501,10 +510,11 @@ void addFilm()
 	char* director = nullptr;
 	char** actors;
 	int actorsCount;
+	int rating = 5;
 
 	getFilmInput(title, year, ganre, director, actors, actorsCount);
 
-	Film film(title, year, ganre, director, actors, actorsCount);
+	Film film(title, year, ganre, director, actors, actorsCount, rating);
 
 	FilmFile << film.title << "\n"
 		<< film.year << "\n"
@@ -516,7 +526,7 @@ void addFilm()
 		FilmFile << film.actors[i] << " ";
 	}
 
-	FilmFile << "\n-\n";
+	FilmFile << "\n" << film.rating << "\n-\n";
 
 	delete[] title;
 	delete[] ganre;
@@ -687,6 +697,125 @@ void showAllFilms()
 	std::cout << "------------------------" << std::endl;
 }
 
+void updateInput()
+{
+	std::cout << "Enter the title of the film you want to update: " << std::endl;
+
+	char title[MAX_STRING_LENGTH];
+	int i = 0;
+	char ch;
+	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+	while (std::cin.get(ch) && i < MAX_STRING_LENGTH - 1) {
+		if (ch == '\n' || ch == '\0') {
+			break;
+		}
+		title[i++] = ch;
+	}
+	title[i] = '\0';
+
+	std::cout << "What would you like to change?\n"
+		<< "1. Rating\n"
+		<< "2. Year\n"
+		<< "3. Genre\n"
+		<< "4. Director\n"
+		<< "5. Actors" << std::endl;
+
+	char choice;
+	std::cin >> choice;
+
+	std::cout << "Enter new value" << std::endl;
+
+	char updateString[MAX_STRING_LENGTH];
+	i = 0;
+	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+	while (std::cin.get(ch) && i < MAX_STRING_LENGTH - 1) {
+		if (ch == '\n' || ch == '\0') {
+			break;
+		}
+		updateString[i++] = ch;
+	}
+	updateString[i] = '\0';
+
+	switch (choice)
+	{
+	case '1':
+		updateFilm(title, updateString, 7);
+		break;
+	case '2':
+		updateFilm(title, updateString, 3);
+		break;
+	case '3':
+		updateFilm(title, updateString, 4);
+		break;
+	case '4':
+		updateFilm(title, updateString, 5);
+		break;
+	case '5':
+		updateFilm(title, updateString, 6);
+		break;
+	}
+}
+
+void updateFilm(char* title, char* newValue, int lineIndex)
+{
+	std::ifstream FilmFile("filmsFile.txt", std::ios::app);
+	std::ofstream TempFile("tempFile.txt");
+
+	if (!FilmFile.is_open()) {
+		std::cout << "Error: Unable to open filmsFile.txt for reading." << std::endl;
+		return;
+	}
+
+	if (!TempFile.is_open()) {
+		std::cout << "Error: Unable to open tempFile.txt for writing." << std::endl;
+		return;
+	}
+
+	char buffer[bufferSize];
+	int index = 0;
+	bool found = false;
+	while (FilmFile.getline(buffer, bufferSize))
+	{
+		if (strCompare(title, buffer) == 0)
+		{
+			found = true;
+			index++;
+		}
+
+		if (found)
+		{
+			index++;
+		}
+
+		if (index == lineIndex)
+		{
+			TempFile << newValue << "\n";
+		}
+		else
+		{
+			TempFile << buffer << "\n";
+		}
+
+		if (buffer[0] == '-')
+		{
+			found = false;
+		}
+	}
+
+	FilmFile.close();
+	TempFile.close();
+
+	if (std::remove("filmsFile.txt") != 0 || std::rename("tempFile.txt", "filmsFile.txt") != 0) {
+		std::cout << "Error: Unable to update filmsFile.txt." << std::endl;
+	}
+	else 
+	{
+		std::cout << "Film successfully updated." << std::endl;
+	}
+
+	std::cout << "------------------------" << std::endl;
+}
+
 void deleteFilm()
 {
 	std::cout << "------------------------" << std::endl;
@@ -745,7 +874,7 @@ void deleteFilm()
 		std::cout << "Error: Unable to update filmsFile.txt." << std::endl;
 	}
 	else {
-		std::cout << "Film" << title << "successfully deleted." << std::endl;
+		std::cout << "Film " << title << " successfully deleted." << std::endl;
 	}
 
 	std::cout << "------------------------" << std::endl;
