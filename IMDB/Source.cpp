@@ -7,6 +7,7 @@ const int bufferSize = 256;
 int strCompare(const char* str1, const char* str2);
 void strCopy(const char* source, char* destination);
 unsigned strLength(const char* str);
+int parse(const char* str);
 
 #pragma region User Structures
 
@@ -89,6 +90,7 @@ void showAllFilms();
 void updateInput();
 void updateFilm(char* title, char* newValue, int lineIndex);
 void deleteFilm();
+void rateFilm();
 
 User currentUser;
 
@@ -166,6 +168,33 @@ unsigned strLength(const char* str)
 	}
 
 	return len;
+}
+
+int parse(const char* str)
+{
+	if (!str)
+	{
+		return 0;
+	}
+
+	bool isNegative = false;
+	if (*str == '-')
+	{
+		isNegative = true;
+		str++;
+	}
+
+	int result = 0;
+	while (*str)
+	{
+		(result *= 10) += (*str - '0');
+		str++;
+	}
+
+	if (isNegative)
+		result *= -1;
+
+	return result;
 }
 
 #pragma endregion
@@ -480,7 +509,7 @@ void displayChoiceMenu()
 			deleteFilm();
 			break;
 		case '7':
-
+			rateFilm();
 			break;
 		case '8':
 
@@ -687,9 +716,25 @@ void showAllFilms()
 	std::ifstream FilmFile("filmsFile.txt", std::ios::app);
 
 	char buffer[bufferSize];
+	int idx = 1;
+	int ratingIndex = 8;
+	int peopleCount = 0;
 	while (FilmFile.getline(buffer, bufferSize))
 	{
-		std::cout << buffer << std::endl;
+		if(idx == ratingIndex - 1)
+		{
+			peopleCount = parse(buffer);
+		}
+		else if (idx == ratingIndex)
+		{
+			std::cout << ((parse(buffer))/peopleCount) << std::endl;
+			idx = 0;
+		}
+		else
+		{
+			std::cout << buffer << std::endl;
+		}
+		idx++;
 	}
 
 	FilmFile.close();
@@ -727,7 +772,7 @@ void updateInput()
 	{
 		std::cout << "Input all actors, split by an interval." << std::endl;
 	}
-	else 
+	else
 	{
 		std::cout << "Enter new value" << std::endl;
 	}
@@ -751,7 +796,7 @@ void updateInput()
 			std::cout << "Invalid score! Please enter numbers 1 to 10." << std::endl;
 			return;
 		}
-		updateFilm(title, updateString, 7);
+		updateFilm(title, updateString, 8);
 		break;
 	case '2':
 		updateFilm(title, updateString, 3);
@@ -887,6 +932,90 @@ void deleteFilm()
 	}
 	else {
 		std::cout << "Film " << title << " successfully deleted." << std::endl;
+	}
+
+	std::cout << "------------------------" << std::endl;
+}
+
+void rateFilm()
+{
+	std::cout << "Title: " << std::endl;
+
+	char title[MAX_STRING_LENGTH];
+	int i = 0;
+	char ch;
+	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+	while (std::cin.get(ch) && i < MAX_STRING_LENGTH - 1) {
+		if (ch == '\n' || ch == '\0') {
+			break;
+		}
+		title[i++] = ch;
+	}
+	title[i] = '\0';
+
+	std::cout << "Rating: " << std::endl;
+	int rating;
+	std::cin >> rating;
+
+	std::ifstream FilmFile("filmsFile.txt", std::ios::app);
+	std::ofstream TempFile("tempFile.txt");
+
+	if (!FilmFile.is_open()) {
+		std::cout << "Error: Unable to open filmsFile.txt for reading." << std::endl;
+		return;
+	}
+
+	if (!TempFile.is_open()) {
+		std::cout << "Error: Unable to open tempFile.txt for writing." << std::endl;
+		return;
+	}
+
+	char buffer[bufferSize];
+	int index = 0;
+	bool found = false;
+	const int lineIndex = 8;
+	while (FilmFile.getline(buffer, bufferSize))
+	{
+		if (strCompare(title, buffer) == 0)
+		{
+			found = true;
+			index++;
+		}
+
+		if (found)
+		{
+			index++;
+		}
+
+		if (index == lineIndex - 1)
+		{
+			TempFile << (parse(buffer) + 1) << "\n";
+		}
+		else if (index == lineIndex)
+		{
+			int newRating = rating + parse(buffer);
+			TempFile << newRating << "\n";
+		}
+		else
+		{
+			TempFile << buffer << "\n";
+		}
+
+		if (buffer[0] == '-')
+		{
+			found = false;
+		}
+	}
+
+	FilmFile.close();
+	TempFile.close();
+
+	if (std::remove("filmsFile.txt") != 0 || std::rename("tempFile.txt", "filmsFile.txt") != 0) {
+		std::cout << "Error: Unable to update filmsFile.txt." << std::endl;
+	}
+	else
+	{
+		std::cout << "Film successfully rated." << std::endl;
 	}
 
 	std::cout << "------------------------" << std::endl;
