@@ -43,33 +43,27 @@ struct Film
 	int year;
 	char* ganre;
 	char* director;
-	char** actors;
+	char* actors;
 	int rating;
+	int peopleCount;
 
 	Film()
 	{
 
 	}
 
-	Film(char* inputTitle, int inputYear, char* inputGanre, char* inputDirector, char** inputActors, int actorCount, int inputRating)
+	Film(char* inputTitle, int inputYear, char* inputGanre, char* inputDirector, char* inputActors, int inputRating, int peopleCount)
 	{
 		title = new char[strLength(inputTitle) + 1];
 		ganre = new char[strLength(inputGanre) + 1];
 		director = new char[strLength(inputDirector) + 1];
+		actors = new char[strLength(inputActors) + 1];
 		strCopy(inputTitle, title);
 		strCopy(inputGanre, ganre);
 		strCopy(inputDirector, director);
-
+		strCopy(inputActors, actors);
 		year = inputYear;
-
-		actors = new char* [actorCount];
-		for (int i = 0; i < actorCount; ++i)
-		{
-			actors[i] = new char[strLength(inputActors[i]) + 1];
-			strCopy(inputActors[i], actors[i]);
-		}
-
-		rating = inputRating;
+		rating = (inputRating / peopleCount);
 	}
 };
 
@@ -91,6 +85,11 @@ void updateInput();
 void updateFilm(char* title, char* newValue, int lineIndex);
 void deleteFilm();
 void rateFilm();
+int countFilms();
+void sort(int criteria);
+void insertionSortByTitle(Film* arr, int size);
+void insertionSortByRating(Film* arr, int size);
+void printFilms(Film* films, int size);
 
 User currentUser;
 
@@ -377,16 +376,18 @@ bool promptUser()
 
 const int MAX_STRING_LENGTH = 50;
 
-void getFilmInput(char*& title, int& year, char*& ganre, char*& director, char**& actors, int& actorsCount)
+void getFilmInput(char*& title, int& year, char*& ganre, char*& director, char*& actors, int& actorsCount)
 {
 	std::cout << "Please enter title, year, ganre, director and actors of the film." << std::endl;
 
 	char* titleArr = new char[MAX_STRING_LENGTH];
 	char* ganreArr = new char[MAX_STRING_LENGTH];
 	char* directorArr = new char[MAX_STRING_LENGTH];
+	char* actorsArr = new char[MAX_STRING_LENGTH * 20];
 	title = titleArr;
 	ganre = ganreArr;
 	director = directorArr;
+	actors = actorsArr;
 
 	char ch;
 	int i = 0;
@@ -394,7 +395,8 @@ void getFilmInput(char*& title, int& year, char*& ganre, char*& director, char**
 	std::cout << "Title: " << std::endl;
 
 	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-	while (std::cin.get(ch) && i < MAX_STRING_LENGTH - 1) {
+	while (std::cin.get(ch) && i < MAX_STRING_LENGTH - 1)
+	{
 		if (ch == '\n' || ch == '\0') {
 			break;
 		}
@@ -409,7 +411,8 @@ void getFilmInput(char*& title, int& year, char*& ganre, char*& director, char**
 
 	i = 0;
 	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-	while (std::cin.get(ch) && i < MAX_STRING_LENGTH - 1) {
+	while (std::cin.get(ch) && i < MAX_STRING_LENGTH - 1)
+	{
 		if (ch == '\n' || ch == '\0') {
 			break;
 		}
@@ -420,7 +423,8 @@ void getFilmInput(char*& title, int& year, char*& ganre, char*& director, char**
 	std::cout << "Director: " << std::endl;
 
 	i = 0;
-	while (std::cin.get(ch) && i < MAX_STRING_LENGTH - 1) {
+	while (std::cin.get(ch) && i < MAX_STRING_LENGTH - 1)
+	{
 		if (ch == '\n' || ch == '\0') {
 			break;
 		}
@@ -428,36 +432,17 @@ void getFilmInput(char*& title, int& year, char*& ganre, char*& director, char**
 	}
 	director[i] = '\0';
 
-	std::cout << "How many actors star in the film?" << std::endl;
+	std::cout << "Input actors seperated by a comma" << std::endl;
 
-	int amountOfActors;
-	std::cin >> amountOfActors;
-	actorsCount = amountOfActors;
-
-	char** actorsArr = new char* [amountOfActors];
-	actors = actorsArr;
-
-	for (int i = 0; i < amountOfActors; ++i) {
-		actors[i] = new char[MAX_STRING_LENGTH];
-	}
-
-	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-	for (int i = 0; i < amountOfActors; i++)
+	i = 0;
+	while (std::cin.get(ch) && i < MAX_STRING_LENGTH - 1)
 	{
-		char actor[MAX_STRING_LENGTH];
-		int j = 0;
-		std::cout << "Actor " << i + 1 << std::endl;
-		while (std::cin.get(ch) && j < MAX_STRING_LENGTH - 1) {
-			if (ch == '\n' || ch == '\0') {
-				break;
-			}
-			actor[j++] = ch;
+		if (ch == '\n' || ch == '\0') {
+			break;
 		}
-		actor[j] = '\0';
-
-		actors[i] = new char[strlen(actor) + 1];
-		strCopy(actor, actors[i]);
+		actors[i++] = ch;
 	}
+	actors[i] = '\0';
 }
 
 void displayChoiceMenu()
@@ -473,8 +458,9 @@ void displayChoiceMenu()
 			<< "5. Update film\n"
 			<< "6. Delete film\n"
 			<< "7. Rate film\n"
-			<< "8. Sort and filter films by rating\n"
-			<< "9. Exit" << std::endl;
+			<< "8. Sort films by title\n"
+			<< "9. Sort films by rating\n"
+			<< "10. Exit" << std::endl;
 		std::cin >> choice;
 		switch (choice)
 		{
@@ -483,7 +469,10 @@ void displayChoiceMenu()
 			{
 				std::cout << "Only admins can add new films" << std::endl;
 			}
-			addFilm();
+			else
+			{
+				addFilm();
+			}
 			break;
 		case '2':
 			findFilmByTitle();
@@ -497,24 +486,33 @@ void displayChoiceMenu()
 		case '5':
 			if (currentUser.role == RegularUser)
 			{
-				std::cout << "Only admins can delete films" << std::endl;
+				std::cout << "Only admins can update films" << std::endl;
 			}
-			updateInput();
+			else
+			{
+				updateInput();
+			}
 			break;
 		case '6':
 			if (currentUser.role == RegularUser)
 			{
 				std::cout << "Only admins can delete films" << std::endl;
 			}
-			deleteFilm();
+			else
+			{
+				deleteFilm();
+			}
 			break;
 		case '7':
 			rateFilm();
 			break;
 		case '8':
-
+			sort(1);
 			break;
 		case '9':
+			sort(2);
+			break;
+		case '10':
 			std::cout << "You exited";
 			return;
 		default:
@@ -537,25 +535,20 @@ void addFilm()
 	int year;
 	char* ganre = nullptr;
 	char* director = nullptr;
-	char** actors;
+	char* actors;
 	int actorsCount;
 	int rating = 5;
+	int people = 1;
 
 	getFilmInput(title, year, ganre, director, actors, actorsCount);
 
-	Film film(title, year, ganre, director, actors, actorsCount, rating);
+	FilmFile << title << "\n"
+		<< year << "\n"
+		<< ganre << "\n"
+		<< director << "\n"
+		<< actors << std::endl;
 
-	FilmFile << film.title << "\n"
-		<< film.year << "\n"
-		<< film.ganre << "\n"
-		<< film.director << std::endl;
-
-	for (int i = 0; i < actorsCount; i++)
-	{
-		FilmFile << film.actors[i] << " ";
-	}
-
-	FilmFile << "\n" << film.rating << "\n-\n";
+	FilmFile << people << "\n" << rating << "\n-\n";
 
 	delete[] title;
 	delete[] ganre;
@@ -721,13 +714,13 @@ void showAllFilms()
 	int peopleCount = 0;
 	while (FilmFile.getline(buffer, bufferSize))
 	{
-		if(idx == ratingIndex - 1)
+		if (idx == ratingIndex - 1)
 		{
 			peopleCount = parse(buffer);
 		}
 		else if (idx == ratingIndex)
 		{
-			std::cout << ((parse(buffer))/peopleCount) << std::endl;
+			std::cout << ((parse(buffer)) / peopleCount) << std::endl;
 			idx = 0;
 		}
 		else
@@ -1019,6 +1012,141 @@ void rateFilm()
 	}
 
 	std::cout << "------------------------" << std::endl;
+}
+
+int countFilms()
+{
+	std::ifstream FilmFile("filmsFile.txt", std::ios::app);
+
+	char buffer[bufferSize];
+	int linesCount = 0;
+	while (FilmFile.getline(buffer, bufferSize))
+	{
+		linesCount++;
+	}
+
+	FilmFile.close();
+
+	return ((linesCount - 1) / 8);
+}
+
+void insertionSortByTitle(Film* arr, int size)
+{
+	for (int i = 1; i < size; i++)
+	{
+		Film x = arr[i];
+		int j = i;
+		while (j > 0 && strCompare(x.title, arr[j - 1].title) < 0)
+		{
+			arr[j] = arr[j - 1];
+			j--;
+		}
+		arr[j] = x;
+	}
+}
+
+void insertionSortByRating(Film* arr, int size)
+{
+	for (int i = 1; i < size; i++)
+	{
+		Film x = arr[i];
+		int j = i;
+		while (j > 0 && x.rating < arr[j - 1].rating)
+		{
+			arr[j] = arr[j - 1];
+			j--;
+		}
+		arr[j] = x;
+	}
+}
+
+void printFilms(Film* films, int size)
+{
+	std::cout << "------------------------" << std::endl;
+
+	for (int i = 0; i < size; i++)
+	{
+		std::cout << "Title: " << films[i].title << "\n"
+			<< "Year: " << films[i].year << "\n"
+			<< "Genre: " << films[i].ganre << "\n"
+			<< "Director: " << films[i].director << "\n"
+			<< "Actors: " << films[i].actors << "\n"
+			<< "Rating: " << films[i].rating << std::endl;
+		std::cout << "-\n";
+	}
+
+	std::cout << "------------------------" << std::endl;
+}
+
+void sort(int criteria)
+{
+	int filmsCount = countFilms();
+	Film* movies = new Film[filmsCount];
+
+	std::ifstream FilmFile("filmsFile.txt", std::ios::app);
+
+	char buffer[bufferSize];
+	int index = 1;
+	int arrayIdx = 0;
+
+	char title[MAX_STRING_LENGTH] = "";
+	int year = 0;
+	char genre[MAX_STRING_LENGTH] = "";
+	char director[MAX_STRING_LENGTH] = "";
+	char actors[MAX_STRING_LENGTH] = "";
+	int rating = 0;
+	int peopleCount = 0;
+
+	FilmFile.getline(buffer, bufferSize);
+	while (FilmFile.getline(buffer, bufferSize))
+	{
+		if (*buffer == '-')
+		{
+			Film film(title, year, genre, director, actors, rating, peopleCount);
+			movies[arrayIdx] = film;
+			arrayIdx++;
+			index = 0;
+		}
+
+		switch (index)
+		{
+		case 1:
+			strCopy(buffer, title);
+			break;
+		case 2:
+			year = parse(buffer);
+			break;
+		case 3:
+			strCopy(buffer, genre);
+			break;
+		case 4:
+			strCopy(buffer, director);
+			break;
+		case 5:
+			strCopy(buffer, actors);
+			break;
+		case 6:
+			peopleCount = parse(buffer);
+			break;
+		case 7:
+			rating = parse(buffer);
+			break;
+		}
+
+		index++;
+	}
+
+	FilmFile.close();
+
+	if (criteria == 1)
+	{
+		insertionSortByTitle(movies, filmsCount);
+	}
+	else
+	{
+		insertionSortByRating(movies, filmsCount);
+	}
+	printFilms(movies, filmsCount);
 }
 
 #pragma endregion
