@@ -1,3 +1,5 @@
+//Github: https://github.com/flowerrz/IMDB
+
 #include <iostream>
 #include <fstream>
 
@@ -447,7 +449,7 @@ void getFilmInput(char*& title, int& year, char*& ganre, char*& director, char*&
 
 void displayChoiceMenu()
 {
-	char choice;
+	int choice;
 	while (true)
 	{
 		std::cout << "What would you like to do?\n"
@@ -464,7 +466,7 @@ void displayChoiceMenu()
 		std::cin >> choice;
 		switch (choice)
 		{
-		case '1':
+		case 1:
 			if (currentUser.role == RegularUser)
 			{
 				std::cout << "Only admins can add new films" << std::endl;
@@ -474,16 +476,16 @@ void displayChoiceMenu()
 				addFilm();
 			}
 			break;
-		case '2':
+		case 2:
 			findFilmByTitle();
 			break;
-		case '3':
+		case 3:
 			findFilmByGenre();
 			break;
-		case '4':
+		case 4:
 			showAllFilms();
 			break;
-		case '5':
+		case 5:
 			if (currentUser.role == RegularUser)
 			{
 				std::cout << "Only admins can update films" << std::endl;
@@ -493,7 +495,7 @@ void displayChoiceMenu()
 				updateInput();
 			}
 			break;
-		case '6':
+		case 6:
 			if (currentUser.role == RegularUser)
 			{
 				std::cout << "Only admins can delete films" << std::endl;
@@ -503,16 +505,16 @@ void displayChoiceMenu()
 				deleteFilm();
 			}
 			break;
-		case '7':
+		case 7:
 			rateFilm();
 			break;
-		case '8':
+		case 8:
 			sort(1);
 			break;
-		case '9':
+		case 9:
 			sort(2);
 			break;
-		case '10':
+		case 10:
 			std::cout << "You exited";
 			return;
 		default:
