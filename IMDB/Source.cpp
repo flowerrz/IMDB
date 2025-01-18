@@ -544,13 +544,14 @@ void addFilm()
 
 	getFilmInput(title, year, ganre, director, actors, actorsCount);
 
-	FilmFile << title << "\n"
+	FilmFile << "-" << "\n"
+		<< title << "\n"
 		<< year << "\n"
 		<< ganre << "\n"
 		<< director << "\n"
 		<< actors << std::endl;
 
-	FilmFile << people << "\n" << rating << "\n-\n";
+	FilmFile << people << "\n" << rating << "\n";
 
 	delete[] title;
 	delete[] ganre;
@@ -786,7 +787,8 @@ void updateInput()
 	switch (choice)
 	{
 	case '1':
-		if (updateString[0] < '1' || updateString[0] > 10)
+		if (updateString[0] < '1' || updateString[0] > '9' ||
+			(updateString[0] == '1' && updateString[1] != '0'))
 		{
 			std::cout << "Invalid score! Please enter numbers 1 to 10." << std::endl;
 			return;
@@ -826,11 +828,13 @@ void updateFilm(char* title, char* newValue, int lineIndex)
 	char buffer[bufferSize];
 	int index = 0;
 	bool found = false;
+	bool exists = false;
 	while (FilmFile.getline(buffer, bufferSize))
 	{
 		if (strCompare(title, buffer) == 0)
 		{
 			found = true;
+			exists = true;
 			index++;
 		}
 
@@ -842,6 +846,10 @@ void updateFilm(char* title, char* newValue, int lineIndex)
 		if (index == lineIndex)
 		{
 			TempFile << newValue << "\n";
+		}
+		else if (index == lineIndex - 1)
+		{
+			TempFile << 1 << "\n";
 		}
 		else
 		{
@@ -857,12 +865,19 @@ void updateFilm(char* title, char* newValue, int lineIndex)
 	FilmFile.close();
 	TempFile.close();
 
-	if (std::remove("filmsFile.txt") != 0 || std::rename("tempFile.txt", "filmsFile.txt") != 0) {
-		std::cout << "Error: Unable to update filmsFile.txt." << std::endl;
+	if (exists)
+	{
+		if (std::remove("filmsFile.txt") != 0 || std::rename("tempFile.txt", "filmsFile.txt") != 0) {
+			std::cout << "Error: Unable to update filmsFile.txt." << std::endl;
+		}
+		else
+		{
+			std::cout << "Film successfully updated." << std::endl;
+		}
 	}
 	else
 	{
-		std::cout << "Film successfully updated." << std::endl;
+		std::cout << "No film with title " << title << " found." << std::endl;
 	}
 
 	std::cout << "------------------------" << std::endl;
@@ -901,11 +916,13 @@ void deleteFilm()
 
 	char buffer[bufferSize];
 	bool inDeleteFilm = false;
+	bool exists = false;
 	while (FilmFile.getline(buffer, bufferSize))
 	{
 		if (strCompare(title, buffer) == 0)
 		{
 			inDeleteFilm = true;
+			exists = true;
 		}
 
 		if (!inDeleteFilm)
@@ -922,11 +939,18 @@ void deleteFilm()
 	FilmFile.close();
 	TempFile.close();
 
-	if (std::remove("filmsFile.txt") != 0 || std::rename("tempFile.txt", "filmsFile.txt") != 0) {
-		std::cout << "Error: Unable to update filmsFile.txt." << std::endl;
+	if (exists)
+	{
+		if (std::remove("filmsFile.txt") != 0 || std::rename("tempFile.txt", "filmsFile.txt") != 0) {
+			std::cout << "Error: Unable to update filmsFile.txt." << std::endl;
+		}
+		else {
+			std::cout << "Film " << title << " successfully deleted." << std::endl;
+		}
 	}
-	else {
-		std::cout << "Film " << title << " successfully deleted." << std::endl;
+	else
+	{
+		std::cout << "No film with title " << title << " found." << std::endl;
 	}
 
 	std::cout << "------------------------" << std::endl;
@@ -952,6 +976,12 @@ void rateFilm()
 	int rating;
 	std::cin >> rating;
 
+	if (rating < 1 || rating > 10)
+	{
+		std::cout << "Invalid rating." << std::endl;
+		return;
+	}
+
 	std::ifstream FilmFile("filmsFile.txt", std::ios::app);
 	std::ofstream TempFile("tempFile.txt");
 
@@ -967,6 +997,7 @@ void rateFilm()
 
 	char buffer[bufferSize];
 	int index = 0;
+	bool exists = false;
 	bool found = false;
 	const int lineIndex = 8;
 	while (FilmFile.getline(buffer, bufferSize))
@@ -974,6 +1005,7 @@ void rateFilm()
 		if (strCompare(title, buffer) == 0)
 		{
 			found = true;
+			exists = true;
 			index++;
 		}
 
@@ -1005,13 +1037,21 @@ void rateFilm()
 	FilmFile.close();
 	TempFile.close();
 
-	if (std::remove("filmsFile.txt") != 0 || std::rename("tempFile.txt", "filmsFile.txt") != 0) {
-		std::cout << "Error: Unable to update filmsFile.txt." << std::endl;
+	if (exists)
+	{
+		if (std::remove("filmsFile.txt") != 0 || std::rename("tempFile.txt", "filmsFile.txt") != 0) {
+			std::cout << "Error: Unable to update filmsFile.txt." << std::endl;
+		}
+		else
+		{
+			std::cout << "Film successfully rated." << std::endl;
+		}
 	}
 	else
 	{
-		std::cout << "Film successfully rated." << std::endl;
+		std::cout << "No film with title " << title << " found." << std::endl;
 	}
+
 
 	std::cout << "------------------------" << std::endl;
 }
@@ -1021,15 +1061,18 @@ int countFilms()
 	std::ifstream FilmFile("filmsFile.txt", std::ios::app);
 
 	char buffer[bufferSize];
-	int linesCount = 0;
+	int count = 0;
 	while (FilmFile.getline(buffer, bufferSize))
 	{
-		linesCount++;
+		if (*buffer == '-')
+		{
+			count++;
+		}
 	}
 
 	FilmFile.close();
 
-	return ((linesCount - 1) / 8);
+	return count;
 }
 
 void insertionSortByTitle(Film* arr, int size)
@@ -1102,7 +1145,7 @@ void sort(int criteria)
 	FilmFile.getline(buffer, bufferSize);
 	while (FilmFile.getline(buffer, bufferSize))
 	{
-		if (*buffer == '-')
+		if (*buffer == '-' || buffer == "")
 		{
 			Film film(title, year, genre, director, actors, rating, peopleCount);
 			movies[arrayIdx] = film;
@@ -1137,6 +1180,9 @@ void sort(int criteria)
 
 		index++;
 	}
+
+	Film film(title, year, genre, director, actors, rating, peopleCount);
+	movies[arrayIdx] = film;
 
 	FilmFile.close();
 
